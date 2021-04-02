@@ -11,14 +11,16 @@ import (
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
+// TimeSeries is a map representation of unique names to time series data points.
 type TimeSeries map[string][]*monitoringpb.Point
 
+// TimeSeriesPlot encapsulates the configuration for a graph / plot.
 type TimeSeriesPlot struct {
-	Name        string
-	XAxisName   string
-	YAxisName   string
-	Description string
-	TimeSeries  TimeSeries
+	Name            string
+	XAxisName       string
+	YAxisName       string
+	Description     string
+	TimeSeriesGroup TimeSeries
 }
 
 // color palette
@@ -38,12 +40,12 @@ var (
 	palette = []color.RGBA{lineColor_1, lineColor_2, lineColor_3, lineColor_4}
 )
 
-// Create builds and returns a *plot.Plot. If the DataPoints field
-// in TimeSeriesPlot is nil or empty, a nil plot is returned as well as an error.
+// Create builds and returns a *plot.Plot. If the TimeSeriesGroup field
+// in TimeSeriesPlot is empty, a nil plot is returned as well as an error.
 // This is also the case if an error is encountered building the line from the XY coordinates.
 func (tsp TimeSeriesPlot) Create() (*plot.Plot, error) {
 
-	if len(tsp.TimeSeries) == 0 {
+	if len(tsp.TimeSeriesGroup) == 0 {
 		return nil, errors.New("no data to plot")
 	}
 
@@ -83,8 +85,8 @@ func (tsp TimeSeriesPlot) Create() (*plot.Plot, error) {
 	// each line should have a unique color and entry
 	// in the legend.
 	// current limit = 4
-	limit := len(palette)-1
-	for name, series := range tsp.TimeSeries {
+	limit := len(palette) - 1
+	for name, series := range tsp.TimeSeriesGroup {
 		if limit < 0 {
 			break
 		}
@@ -107,6 +109,7 @@ func (tsp TimeSeriesPlot) Create() (*plot.Plot, error) {
 	return p, nil
 }
 
+// createLine creates a line from data points.
 func createLine(dataPoints []*monitoringpb.Point) (*plotter.Line, error) {
 	var XYs plotter.XYs
 	for _, point := range dataPoints {

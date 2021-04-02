@@ -105,8 +105,8 @@ func executeQuery(cmd *cobra.Command, args []string) error {
 	query := tsplot.MetricQuery{
 		Project:    project,
 		TimeSeries: fmt.Sprintf("custom.googleapis.com/opencensus/%s/%s/%s", app, service, metric),
-		StartTime:  st,
-		EndTime:    et,
+		StartTime:  &st,
+		EndTime:    &et,
 	}
 
 	if err := query.BuildRequest(); err != nil {
@@ -125,7 +125,7 @@ func executeQuery(cmd *cobra.Command, args []string) error {
 	}
 
 	if justPrint {
-		fmt.Printf("%v\n\n", timeSeries)
+		fmt.Printf("%v", timeSeries)
 		return nil
 	}
 
@@ -135,11 +135,11 @@ func executeQuery(cmd *cobra.Command, args []string) error {
 	ts[metric] = timeSeries.GetPoints()
 
 	plot := tsplot.TimeSeriesPlot{
-		Name:        timeSeries.GetMetric().GetType(),
-		XAxisName:   "",
-		YAxisName:   "",
-		Description: "",
-		TimeSeries:  ts,
+		Name:            timeSeries.GetMetric().GetType(),
+		XAxisName:       "",
+		YAxisName:       "",
+		Description:     "",
+		TimeSeriesGroup: ts,
 	}
 
 	timeSeriesPlot, err := plot.Create()
