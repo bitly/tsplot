@@ -14,7 +14,7 @@ import (
 
 type MetricQuery struct {
 	Project    string
-	TimeSeries string // todo: add ability to compare multiple time series
+	TimeSeries string
 	StartTime  time.Time
 	EndTime    time.Time
 

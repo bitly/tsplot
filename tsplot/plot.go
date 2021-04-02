@@ -18,7 +18,6 @@ type TimeSeriesPlot struct {
 	XAxisName   string
 	YAxisName   string
 	Description string
-	DataPoints  []*monitoringpb.Point
 	TimeSeries  TimeSeries
 }
 
