@@ -20,11 +20,11 @@ func main() {
     ... snip ...
 
     now := time.Now()
-	  mq := &tsplot.MetricQuery{
-        Project: "bitly-gcp-prod"
-        TimeSeries: "metric.resource = \"global\" AND metric.type = \"custom.googleapis.com/opencensus/fishnet/queuereader_fishnet/messages_total\""
-        StartTime: now.Add(-time.Hour * 2) // start two hours ago
-        EndTime: now
+    mq := &tsplot.MetricQuery{
+      Project: "bitly-gcp-prod"
+      MetricDescriptor: "custom.googleapis.com/opencensus/fishnet/queuereader_fishnet/messages_total"
+      StartTime: now.Add(-time.Hour * 2) // start two hours ago
+      EndTime: now
     }
 
     if err := mq.BuildRequest(); err != nil {
