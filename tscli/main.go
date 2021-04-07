@@ -103,16 +103,16 @@ func executeQuery(cmd *cobra.Command, args []string) error {
 	et := parseTime(endTime)
 
 	query := tsplot.MetricQuery{
-		Project:    project,
-		TimeSeries: fmt.Sprintf("custom.googleapis.com/opencensus/%s/%s/%s", app, service, metric),
-		StartTime:  &st,
-		EndTime:    &et,
+		Project:          project,
+		MetricDescriptor: fmt.Sprintf("custom.googleapis.com/opencensus/%s/%s/%s", app, service, metric),
+		StartTime:        &st,
+		EndTime:          &et,
 	}
 
 	if err := query.BuildRequest(); err != nil {
 		return err
 	}
-	tsi, err := query.Perform(GoogleCloudMonitoringClient)
+	tsi, err := query.PerformWithClient(GoogleCloudMonitoringClient)
 	if err != nil {
 		return err
 	}

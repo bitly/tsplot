@@ -14,13 +14,13 @@ func TestMetricQuery_BuildRequest(t *testing.T) {
 		{
 			desc: "fail to  build request, missing Project",
 			in: &MetricQuery{
-				TimeSeries: "compute.googleapis.com/instance/cpu/usage_time",
+				MetricDescriptor: "compute.googleapis.com/instance/cpu/usage_time",
 			},
 			out:       &MetricQuery{},
 			expectErr: true,
 		},
 		{
-			desc: "fail to  build request, missing TimeSeries",
+			desc: "fail to  build request, missing MetricDescriptor",
 			in: &MetricQuery{
 				Project: "my-project",
 			},

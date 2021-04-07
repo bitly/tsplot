@@ -11,7 +11,7 @@ import (
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
-// TimeSeries is a map representation of unique names to time series data points.
+// MetricDescriptor is a map representation of unique names to time series data points.
 type TimeSeries map[string][]*monitoringpb.Point
 
 // TimeSeriesPlot encapsulates the configuration for a graph / plot.

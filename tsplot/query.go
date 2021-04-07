@@ -17,15 +17,15 @@ import (
 //
 // Required Fields:
 // Project
-// TimeSeries
+// MetricDescriptor
 // StartTime
 //
 // When the request is built, it will be stored in the ListTimeSeries request field.
 type MetricQuery struct {
-	Project    string
-	TimeSeries string
-	StartTime  *time.Time
-	EndTime    *time.Time
+	Project          string
+	MetricDescriptor string
+	StartTime        *time.Time
+	EndTime          *time.Time
 
 	ListTimeSeriesRequest *monitoringpb.ListTimeSeriesRequest
 }
@@ -38,7 +38,7 @@ type MetricQuery struct {
 //
 // Required data:
 // MetricQuery.Project
-// MetricQuery.TimeSeries
+// MetricQuery.MetricDescriptor
 // MetricQuery.StartTime
 //
 // If MetricQuery.EndTime has not been provided, it will default to time.Now()
@@ -51,8 +51,8 @@ func (mq *MetricQuery) BuildRequest() error {
 		return errors.New("MetricQuery missing GCE Project")
 	}
 
-	if mq.TimeSeries == "" {
-		return errors.New("MetricQuery missing TimeSeries")
+	if mq.MetricDescriptor == "" {
+		return errors.New("MetricQuery missing MetricDescriptor")
 	}
 
 	if mq.StartTime == nil {
@@ -66,7 +66,7 @@ func (mq *MetricQuery) BuildRequest() error {
 
 	tsreq = monitoringpb.ListTimeSeriesRequest{
 		Name:   fmt.Sprintf("projects/%s", mq.Project),
-		Filter: fmt.Sprintf("resource.type = \"global\" AND metric.type = \"%s\"", mq.TimeSeries),
+		Filter: fmt.Sprintf("resource.type = \"global\" AND metric.type = \"%s\"", mq.MetricDescriptor),
 		Interval: &monitoringpb.TimeInterval{
 			EndTime:   timestamppb.New(*mq.EndTime),
 			StartTime: timestamppb.New(*mq.StartTime),
@@ -83,13 +83,13 @@ func (mq *MetricQuery) BuildRequest() error {
 	return nil
 }
 
-// Perform sends the MetricQuery.ListTimeSeriesRequest to the Google Cloud Monitoring API.
+// PerformWithClient sends the MetricQuery.ListTimeSeriesRequest to the Google Cloud Monitoring API.
 // If the request has not been built yet, i.e: BuildRequest() has not been called on the MetricQuery,
 // an error will be returned. A Google Cloud Monitoring client is required to be passed in as a parameter
 // if authentication has not been set up on the client, an error will result from the call.
-func (mq *MetricQuery) Perform(client *monitoring.MetricClient) (*monitoring.TimeSeriesIterator, error) {
+func (mq *MetricQuery) PerformWithClient(client *monitoring.MetricClient) (*monitoring.TimeSeriesIterator, error) {
 	if mq.ListTimeSeriesRequest == nil {
-		return nil, errors.New("attempted to call Perform() with nil request")
+		return nil, errors.New("attempted to call PerformWithClient with nil request")
 	}
 	return client.ListTimeSeries(context.Background(), mq.ListTimeSeriesRequest), nil
 }
