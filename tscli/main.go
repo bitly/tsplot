@@ -134,21 +134,13 @@ func executeQuery(cmd *cobra.Command, args []string) error {
 	ts := tsplot.TimeSeries{}
 	ts[metric] = timeSeries.GetPoints()
 
-	plot := tsplot.TimeSeriesPlot{
-		Name:            timeSeries.GetMetric().GetType(),
-		XAxisName:       "",
-		YAxisName:       "",
-		Description:     "",
-		TimeSeriesGroup: ts,
-	}
-
-	timeSeriesPlot, err := plot.Create()
+	p, err := ts.Plot([]tsplot.PlotOption{tsplot.WithXAxisName("UTC"), tsplot.WithXTimeTicks(time.Kitchen)}...)
 	if err != nil {
 		return err
 	}
 
 	saveFile := fmt.Sprintf("%s-%s.png", service, metric)
-	timeSeriesPlot.Save(8*vg.Inch, 4*vg.Inch, saveFile)
+	p.Save(8*vg.Inch, 4*vg.Inch, saveFile)
 
 	return nil
 }

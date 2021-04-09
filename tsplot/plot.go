@@ -2,91 +2,41 @@ package tsplot
 
 import (
 	"errors"
-	"image/color"
-	"time"
-
-	"golang.org/x/image/colornames"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
-// MetricDescriptor is a map representation of unique names to time series data points.
+// TimeSeries is a map representation of unique names to time series.
 type TimeSeries map[string][]*monitoringpb.Point
-
-// TimeSeriesPlot encapsulates the configuration for a graph / plot.
-type TimeSeriesPlot struct {
-	Name            string
-	XAxisName       string
-	YAxisName       string
-	Description     string
-	TimeSeriesGroup TimeSeries
-}
-
-// color palette
-// high contrast; attempt to be colorblind friendly
-var (
-	// graph colors
-	backgroundColor = colornames.Black    // background color of plot
-	foregroundColor = colornames.White    // color used for foreground components like the axis and labels
-	gridColor       = colornames.Darkgrey // grid overlay color
-
-	// line colors - bright dissimilar colors
-	lineColor_1 = colornames.Lightblue
-	lineColor_2 = colornames.Yellow
-	lineColor_3 = colornames.Orange
-	lineColor_4 = colornames.Fuchsia
-
-	palette = []color.RGBA{lineColor_1, lineColor_2, lineColor_3, lineColor_4}
-)
 
 // Create builds and returns a *plot.Plot. If the TimeSeriesGroup field
 // in TimeSeriesPlot is empty, a nil plot is returned as well as an error.
 // This is also the case if an error is encountered building the line from the XY coordinates.
-func (tsp TimeSeriesPlot) Create() (*plot.Plot, error) {
+func (ts TimeSeries) Plot(opts ...PlotOption) (*plot.Plot, error) {
 
-	if len(tsp.TimeSeriesGroup) == 0 {
+	if len(ts) == 0 {
 		return nil, errors.New("no data to plot")
 	}
 
 	p := plot.New()
 
-	// aesthetics - high contrast
-	p.Title.Text = tsp.Name
-	p.Title.TextStyle.Color = foregroundColor
-	p.BackgroundColor = backgroundColor
-	grid := plotter.NewGrid()
-	grid.Horizontal.Color = gridColor
-	grid.Vertical.Color = gridColor
-	p.Legend.TextStyle.Color = foregroundColor
-	p.X.Color = foregroundColor
-	p.Y.Color = foregroundColor
-	p.X.Label.TextStyle.Color = foregroundColor
-	p.Y.Label.TextStyle.Color = foregroundColor
-	p.X.Tick.Color = foregroundColor
-	p.Y.Tick.Color = foregroundColor
-	p.X.Tick.Label.Color = foregroundColor
-	p.Y.Tick.Label.Color = foregroundColor
-	p.Add(grid)
+	// default high contrast
+	ApplyDefaultHighContrast(p)
 
-	// time format in UTC
-	xticks := plot.TimeTicks{
-		Format: time.Kitchen,
+	// user overrides
+	for _, opt := range opts {
+		opt(p)
 	}
 
-	p.X.Tick.Marker = xticks
-
-	// if XAxisName is unset, default to UTC
-	if tsp.XAxisName == "" {
-		p.X.Label.Text = "UTC"
-	}
+	lineColors := DefaultColors_HighContrast.LineColors
 
 	// create a unique line for each time series
 	// each line should have a unique color and entry
 	// in the legend.
 	// current limit = 4
-	limit := len(palette) - 1
-	for name, series := range tsp.TimeSeriesGroup {
+	limit := len(lineColors) - 1
+	for name, series := range ts {
 		if limit < 0 {
 			break
 		}
@@ -96,7 +46,7 @@ func (tsp TimeSeriesPlot) Create() (*plot.Plot, error) {
 		}
 
 		// color the line
-		line.Color = palette[limit]
+		line.Color = lineColors[limit]
 
 		// add to legend
 		p.Legend.Add(name, line)
