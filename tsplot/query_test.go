@@ -30,7 +30,7 @@ func TestMetricQuery_BuildRequest(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := test.in.BuildRequest()
+		_, err := test.in.request()
 		if err != nil && !test.expectErr {
 			t.Errorf("got unexpected err: %v\n", err)
 		}

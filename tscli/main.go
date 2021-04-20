@@ -109,9 +109,6 @@ func executeQuery(cmd *cobra.Command, args []string) error {
 		EndTime:          &et,
 	}
 
-	if err := query.BuildRequest(); err != nil {
-		return err
-	}
 	tsi, err := query.PerformWithClient(GoogleCloudMonitoringClient)
 	if err != nil {
 		return err

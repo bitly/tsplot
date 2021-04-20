@@ -12,6 +12,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// DefaultQuery the query filter used if no overrides are given.
+const DefaultQueryFilter = "resource.type = \"global\" AND metric.type = \"%s\""
+
 // MetricQuery is a type that encapsulates the various parts that are used to form a ListTimeSeriesRequest.
 // If EndTime is not provided, it will be defaulted to the current time.
 //
@@ -19,44 +22,36 @@ import (
 // Project
 // MetricDescriptor
 // StartTime
-//
-// When the request is built, it will be stored in the ListTimeSeries request field.
 type MetricQuery struct {
 	Project          string
 	MetricDescriptor string
 	StartTime        *time.Time
 	EndTime          *time.Time
 
-	ListTimeSeriesRequest *monitoringpb.ListTimeSeriesRequest
+	queryFilter string
 }
 
-// BuildRequest will build a ListTimeSeriesRequest from the fields in MetricQuery.
-// The resulting request, when performed, will result in either zero or one time series
-// being returned to the caller. This is due to the Aggregation settings aligning on
-// rate and reducing on mean. An error will be returned if MetricQuery is missing key data
-// required to build the request.
-//
-// Required data:
-// MetricQuery.Project
-// MetricQuery.MetricDescriptor
-// MetricQuery.StartTime
-//
-// If MetricQuery.EndTime has not been provided, it will default to time.Now()
-//
-func (mq *MetricQuery) BuildRequest() error {
+// setQueryFilter provides a hook to modify the metric query filter.
+func (mq *MetricQuery) setQueryFilter(queryFilter string) {
+	mq.queryFilter = queryFilter
+}
+
+// request builds and returns a *monitoringpb.ListTimeSeriesRequeset.
+// If there is not enough information to build the request an error is returned.
+func (mq *MetricQuery) request() (*monitoringpb.ListTimeSeriesRequest, error) {
 
 	var tsreq monitoringpb.ListTimeSeriesRequest
 
 	if mq.Project == "" {
-		return errors.New("MetricQuery missing GCE Project")
+		return nil, errors.New("MetricQuery missing GCE Project")
 	}
 
 	if mq.MetricDescriptor == "" {
-		return errors.New("MetricQuery missing MetricDescriptor")
+		return nil, errors.New("MetricQuery missing MetricDescriptor")
 	}
 
 	if mq.StartTime == nil {
-		return errors.New("start time has not been provided")
+		return nil, errors.New("start time has not been provided")
 	}
 
 	now := time.Now()
@@ -64,9 +59,13 @@ func (mq *MetricQuery) BuildRequest() error {
 		mq.EndTime = &now
 	}
 
+	if mq.queryFilter == "" {
+		mq.queryFilter = fmt.Sprintf(DefaultQueryFilter, mq.MetricDescriptor)
+	}
+
 	tsreq = monitoringpb.ListTimeSeriesRequest{
 		Name:   fmt.Sprintf("projects/%s", mq.Project),
-		Filter: fmt.Sprintf("resource.type = \"global\" AND metric.type = \"%s\"", mq.MetricDescriptor),
+		Filter: mq.queryFilter,
 		Interval: &monitoringpb.TimeInterval{
 			EndTime:   timestamppb.New(*mq.EndTime),
 			StartTime: timestamppb.New(*mq.StartTime),
@@ -79,8 +78,7 @@ func (mq *MetricQuery) BuildRequest() error {
 		View: monitoringpb.ListTimeSeriesRequest_FULL,
 	}
 
-	mq.ListTimeSeriesRequest = &tsreq
-	return nil
+	return &tsreq, nil
 }
 
 // PerformWithClient sends the MetricQuery.ListTimeSeriesRequest to the Google Cloud Monitoring API.
@@ -88,8 +86,9 @@ func (mq *MetricQuery) BuildRequest() error {
 // an error will be returned. A Google Cloud Monitoring client is required to be passed in as a parameter
 // if authentication has not been set up on the client, an error will result from the call.
 func (mq *MetricQuery) PerformWithClient(client *monitoring.MetricClient) (*monitoring.TimeSeriesIterator, error) {
-	if mq.ListTimeSeriesRequest == nil {
-		return nil, errors.New("attempted to call PerformWithClient with nil request")
+	request, err := mq.request()
+	if err != nil {
+		return nil, err
 	}
-	return client.ListTimeSeries(context.Background(), mq.ListTimeSeriesRequest), nil
+	return client.ListTimeSeries(context.Background(), request), nil
 }
