@@ -13,7 +13,9 @@ import (
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	"github.com/spf13/cobra"
+	"golang.org/x/image/colornames"
 	"gonum.org/v1/plot/vg"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -46,13 +48,15 @@ from Google Cloud Monitoring (formerly StackDriver).
 		RunE:    executeQuery,
 	}
 
-	project   string
-	app       string
-	service   string
-	metric    string
-	startTime string
-	endTime   string
-	justPrint bool
+	project       string
+	app           string
+	service       string
+	metric        string
+	startTime     string
+	endTime       string
+	queryOverride string
+	reduce        bool
+	justPrint     bool
 )
 
 func init() {
@@ -63,6 +67,8 @@ func init() {
 	rootCmd.Flags().StringVar(&startTime, "start", "", "Start time of window for which the query returns time series data for. Hours or minutes accepted, i.e: -5h or -5m.")
 	rootCmd.Flags().StringVar(&endTime, "end", "now", "End of the time window for which the query returns time series data for. Hours or minutes accepted, i.e: -5h or -5m or now.")
 	rootCmd.Flags().BoolVar(&justPrint, "print-raw", false, "Only print time series data and exit.")
+	rootCmd.Flags().BoolVar(&reduce, "reduce", false, "Use a time series reducer to return a single averaged result.")
+	rootCmd.Flags().StringVar(&queryOverride, "query-override", "", "Override the default query. Must be a full valid query. Metric flag is not used.")
 	rootCmd.MarkFlagRequired("project")
 	rootCmd.MarkFlagRequired("app")
 	rootCmd.MarkFlagRequired("service")
@@ -87,6 +93,10 @@ func auth(cmd *cobra.Command, args []string) error {
 
 func executeQuery(cmd *cobra.Command, args []string) error {
 
+	if metric != "" && queryOverride != "" {
+		fmt.Println("warn: both --metric and --query-override flag used. Favoring --query-override.")
+	}
+
 	if !timeFormatOK(startTime) {
 		return errors.New("err validating start time format")
 	}
@@ -109,29 +119,48 @@ func executeQuery(cmd *cobra.Command, args []string) error {
 		EndTime:          &et,
 	}
 
+	if queryOverride != "" {
+		query.SetQueryFilter(queryOverride)
+	}
+
+	query.SetReduce(reduce)
+
 	tsi, err := query.PerformWithClient(GoogleCloudMonitoringClient)
 	if err != nil {
 		return err
 	}
 
-	// query.Perform() will only return a single time series.
-	// no need to loop
-	timeSeries, err := tsi.Next()
-	if err != nil {
-		return err
-	}
-
-	if justPrint {
-		fmt.Printf("%v", timeSeries)
-		return nil
-	}
-
-	// TODO: update to support multiple time series
-	// tsplot pkg has been updated with support, now just need to do CLI
 	ts := tsplot.TimeSeries{}
-	ts[metric] = timeSeries.GetPoints()
+	for {
+		timeSeries, err := tsi.Next()
+		if err != nil {
+			if err == iterator.Done {
+				break
+			}
+			return err
+		}
 
-	p, err := ts.Plot([]tsplot.PlotOption{tsplot.WithXAxisName("UTC"), tsplot.WithXTimeTicks(time.Kitchen)}...)
+		// todo: implement "just-print" mode for multiple time series
+		//if justPrint {
+		//	fmt.Printf("%v", timeSeries)
+		//	return nil
+		//}
+
+		// key helps to fill out legend.
+		// Here we are grabbing the pod name.
+		key := timeSeries.GetMetric().GetLabels()["opencensus_task"]
+		if key == "" {
+			// Labels we want to use don't necessarily exist when a cross series reducer has been used.
+			// So we can just use "mean" in the legend.
+			key = "mean"
+		}
+		ts[key] = timeSeries.GetPoints()
+	}
+
+	p, err := ts.Plot([]tsplot.PlotOption{tsplot.WithXAxisName("UTC"),
+		tsplot.WithXTimeTicks(time.Kitchen),
+		tsplot.WithGrid(colornames.Darkgrey),
+		tsplot.WithTitle(metric)}...)
 	if err != nil {
 		return err
 	}
