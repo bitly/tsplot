@@ -29,14 +29,20 @@ type MetricQuery struct {
 	EndTime          *time.Time
 
 	queryFilter string
+	reduce      bool
 }
 
-// setQueryFilter provides a hook to modify the metric query filter.
-func (mq *MetricQuery) setQueryFilter(queryFilter string) {
+// SetQueryFilter provides a hook to modify the metric query filter.
+func (mq *MetricQuery) SetQueryFilter(queryFilter string) {
 	mq.queryFilter = queryFilter
 }
 
-// request builds and returns a *monitoringpb.ListTimeSeriesRequeset.
+// SetReduce
+func (mq *MetricQuery) SetReduce(b bool) {
+	mq.reduce = b
+}
+
+// request builds and returns a *monitoringpb.ListTimeSeriesRequest.
 // If there is not enough information to build the request an error is returned.
 func (mq *MetricQuery) request() (*monitoringpb.ListTimeSeriesRequest, error) {
 
@@ -76,6 +82,10 @@ func (mq *MetricQuery) request() (*monitoringpb.ListTimeSeriesRequest, error) {
 			CrossSeriesReducer: monitoringpb.Aggregation_REDUCE_MEAN,
 		},
 		View: monitoringpb.ListTimeSeriesRequest_FULL,
+	}
+
+	if !mq.reduce {
+		tsreq.Aggregation.CrossSeriesReducer = 0
 	}
 
 	return &tsreq, nil
