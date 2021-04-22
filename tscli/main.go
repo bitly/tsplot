@@ -55,6 +55,7 @@ from Google Cloud Monitoring (formerly StackDriver).
 	startTime     string
 	endTime       string
 	queryOverride string
+	outDir        string
 	reduce        bool
 	justPrint     bool
 )
@@ -69,6 +70,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&justPrint, "print-raw", false, "Only print time series data and exit.")
 	rootCmd.Flags().BoolVar(&reduce, "reduce", false, "Use a time series reducer to return a single averaged result.")
 	rootCmd.Flags().StringVar(&queryOverride, "query-override", "", "Override the default query. Must be a full valid query. Metric flag is not used.")
+	rootCmd.Flags().StringVarP(&outDir, "output", "o", "", "Specify output directory for resulting plot. Defaults to current working directory.")
 	rootCmd.MarkFlagRequired("project")
 	rootCmd.MarkFlagRequired("app")
 	rootCmd.MarkFlagRequired("service")
@@ -165,7 +167,10 @@ func executeQuery(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	saveFile := fmt.Sprintf("%s-%s.png", service, metric)
+	if outDir == "" {
+		outDir, _ = os.Getwd()
+	}
+	saveFile := fmt.Sprintf("%s/%s-%s.png", outDir, service, metric)
 	p.Save(8*vg.Inch, 4*vg.Inch, saveFile)
 
 	return nil
