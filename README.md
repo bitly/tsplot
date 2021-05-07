@@ -12,6 +12,7 @@ More information on authentication can be found in the offical [Google Cloud doc
 
 ## Query
 tsplot helps to facilitate easy querying of the Google Cloud Monitoring API for time series matching the supplied criteria.
+In addition it provides methods of overriding certain aspects of the query.
 
 For example, the following code snippet will return a single time series for the following metric descriptor: `custom.googleapis.com/opencensus/fishnet/queuereader_fishnet/messages_total`.
 ```
@@ -27,12 +28,11 @@ func main() {
       EndTime: now
     }
 
-    if err := mq.BuildRequest(); err != nil {
-        fmt.Printf("error building request: %v\n", err)
-        os.Exit(1)
-    }
 
-    tsi, err := mq.Perform(client)
+    // enable cross series reducer
+    query.SetReduce(true)
+
+    tsi, err := mq.PerformWithClient(client)
     if err != nil {
         fmt.Printf("error performing query: %v\n", err)
         os.Exit(1)
@@ -40,37 +40,31 @@ func main() {
 ```
 
 ## Plotting
-To plot the data, tsplot leverages the opensource package [gonum/plot](github.com/gonum/plot) to create a graph and plot the data for a given time series.
+To plot the data, tsplot leverages the open source package [gonum/plot](github.com/gonum/plot) to create a graph and plot the data for a given time series.
 
 The example below creates a new graph containing a singular time series, plots it, and saves the resulting plot to disk.
 ```
 func main() {
 
-    var tsGroup tsplot.TimeSeries
-    metric := messages_total
-
     ... snip ...
 
-    // Assuming the request returned a singular time series in the time series iterator.
-    // grab the first time series from the iterator.
-    timeSeries := tsi.Next()
-    ts[metric] = ts.GetPoints()
-    plot := tsplot.TimeSeriesPlot{
-        Name: timeSeries.GetMetric().GetType(),
-        XAxisName: "", // if empty, defaults to "UTC"
-        YAxisName: "", // optional label for Y axis
-        Description: "", // optional description
-        TimeSeries: ts,
-    }
+    ts := tsplot.TimeSeries{}
 
-    timeSeriesPlot, err := plot.Create()
+    timeSeries, _ := tsi.Next()
+    ts[metric] = ts.GetPoints()
+
+    // create the plot with some formatting options
+    p, err := ts.Plot([]tsplot.PlotOption{
+      tsplot.WithXAxisName("UTC"),
+      tsplot.WIthGrid(colornames.Darkgrey),
+      tsplot.WithTitle(metric)}...)
+    
     if err != nil {
-        fmt.Printf("err creating plot: %v\n", err)
-        os.Exit(1)
+      return err
     }
 
     // optionally save the plot to disk
-    timeSeriesPlot.Save(8*vg.Inch, 4*vg.Inch, "./my-graph.png")
+    p.Save(8*vg.Inch, 4*vg.Inch, "./my-graph.png")
 }
 ```
 
@@ -79,5 +73,3 @@ I'm not a UX designer, but I have selected colors that I find higher contrast
 and easier to see. I am basing this completely off my colorblindness which is 
 unique to me. Improvements to the color palette used are welcome.
 
-#### Limitations
-Although `tsplot` allows multiple time series to be plotted on a singular graph the limit is currently four lines. This is because the current color palette for the lines only contains four colors.
