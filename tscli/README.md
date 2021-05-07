@@ -17,14 +17,18 @@ Usage:
   tscli [flags]
 
 Flags:
-  -a, --app string       The (Bitly) application. Usually top level directory
-      --end string       End of the time window for which the query returns time series data for. Hours or minutes accepted, i.e: -5h or -5m or now. (default "now")
-  -h, --help             help for tscli
-  -m, --metric string    The metric.
-      --print-raw        Only print time series data and exit.
-  -p, --project string   GCP Project.
-  -s, --service string   The (Bitly) service. Service directory found under application directory.
-      --start string     Start time of window for which the query returns time series data for. Hours or minutes accepted, i.e: -5h or -5m.
+  -a, --app string              The (Bitly) application. Usually top level directory
+      --end string              End of the time window for which the query returns time series data for. Hours or minutes accepted, i.e: -5h or -5m or now. (default "now")
+  -h, --help                    help for tscli
+  -m, --metric string           The metric.
+  -o, --output string           Specify output directory for resulting plot. Defaults to current working directory.
+      --print-raw               Only print time series data and exit.
+  -p, --project string          GCP Project.
+      --query-override string   Override the default query. Must be a full valid query. Metric flag is not used.
+      --reduce                  Use a time series reducer to return a single averaged result.
+  -s, --service string          The (Bitly) service. Service directory found under application directory.
+      --start string            Start time of window for which the query returns time series data for. Hours or minutes accepted, i.e: -5h or -5m.
+
 ```
 
 ## Authentication
