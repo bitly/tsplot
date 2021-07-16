@@ -10,7 +10,7 @@ import (
 // TimeSeries is a map representation of unique names to time series.
 type TimeSeries map[string][]*monitoringpb.Point
 
-// Create builds and returns a *plot.Plot. If the TimeSeriesGroup field
+// Plot builds and returns a *plot.Plot. If the TimeSeriesGroup field
 // in TimeSeriesPlot is empty, a nil plot is returned as well as an error.
 // This is also the case if an error is encountered building the line from the XY coordinates.
 func (ts TimeSeries) Plot(opts ...PlotOption) (*plot.Plot, error) {
