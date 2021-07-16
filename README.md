@@ -1,14 +1,16 @@
 # tsplot
+[![Go Report Card](https://goreportcard.com/badge/github.com/bitly/tsplot)](https://goreportcard.com/report/github.com/bitly/tsplot)
+
 This package provides a method of querying for raw time series data from the GCM APIs and additionally plotting that data for use in other applications.
 
 This came to be due to what we consider a small limitation in the Google APIs which require us to re-draw graphs to include them in other applications such as
-slackbots. There is no facility in the Google API that provides a PNG of already graphed data.
+Slack bots. There is no facility in the Google API that provides a PNG of already graphed data.
 
 ## Authentication
 This package makes no effort to assist in authentication to the Google APIs.
 Instead, it will expect the caller to supply an authenticated client.
 
-More information on authentication can be found in the offical [Google Cloud documentation](https://cloud.google.com/docs/authentication).
+More information on authentication can be found in the official [Google Cloud documentation](https://cloud.google.com/docs/authentication).
 
 ## Query
 tsplot helps to facilitate easy querying of the Google Cloud Monitoring API for time series matching the supplied criteria.
@@ -68,8 +70,11 @@ func main() {
 }
 ```
 
-#### Graph Color Scheme
+### Example generated graphs:
+Query across multiple time series with mean reducer:  
+![graph1](sample/1.png)
+
+### Graph Color Scheme
 I'm not a UX designer, but I have selected colors that I find higher contrast
 and easier to see. I am basing this completely off my colorblindness which is 
 unique to me. Improvements to the color palette used are welcome.
-

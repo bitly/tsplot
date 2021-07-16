@@ -12,7 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// DefaultQuery the query filter used if no overrides are given.
+// DefaultQueryFilter the query filter used if no overrides are given.
 const DefaultQueryFilter = "resource.type = \"global\" AND metric.type = \"%s\""
 
 // MetricQuery is a type that encapsulates the various parts that are used to form a ListTimeSeriesRequest.
@@ -37,7 +37,8 @@ func (mq *MetricQuery) SetQueryFilter(queryFilter string) {
 	mq.queryFilter = queryFilter
 }
 
-// SetReduce
+// SetReduce sets the boolean reduce value on *MetricQuery structure. This controls whether or not cross series reduction is
+// performed on multiple time series.
 func (mq *MetricQuery) SetReduce(b bool) {
 	mq.reduce = b
 }
