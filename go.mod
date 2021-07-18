@@ -1,4 +1,4 @@
-module tsplot
+module github.com/bitly/tsplot
 
 go 1.14
 
