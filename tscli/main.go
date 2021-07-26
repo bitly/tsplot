@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"tsplot/tsplot"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
+	"github.com/bitly/tsplot/tsplot"
 	"github.com/spf13/cobra"
 	"golang.org/x/image/colornames"
 	"gonum.org/v1/plot/vg"
