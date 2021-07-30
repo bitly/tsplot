@@ -53,7 +53,7 @@ func (mq *MetricQuery) request() (*monitoringpb.ListTimeSeriesRequest, error) {
 		return nil, errors.New("MetricQuery missing GCE Project")
 	}
 
-	if mq.MetricDescriptor == "" {
+	if mq.MetricDescriptor == "" && mq.queryFilter == "" {
 		return nil, errors.New("MetricQuery missing MetricDescriptor")
 	}
 
@@ -66,13 +66,16 @@ func (mq *MetricQuery) request() (*monitoringpb.ListTimeSeriesRequest, error) {
 		mq.EndTime = &now
 	}
 
-	if mq.queryFilter == "" {
-		mq.queryFilter = fmt.Sprintf(DefaultQueryFilter, mq.MetricDescriptor)
+	// Complete override of timeSeriesRequestFilter. Use verbatim.
+	// Resolves: https://github.com/bitly/tsplot/issues/9
+	timeSeriesRequestFilter := fmt.Sprintf(DefaultQueryFilter, mq.MetricDescriptor)
+	if mq.queryFilter != "" {
+		timeSeriesRequestFilter = mq.queryFilter
 	}
 
 	tsreq = monitoringpb.ListTimeSeriesRequest{
 		Name:   fmt.Sprintf("projects/%s", mq.Project),
-		Filter: mq.queryFilter,
+		Filter: timeSeriesRequestFilter,
 		Interval: &monitoringpb.TimeInterval{
 			EndTime:   timestamppb.New(*mq.EndTime),
 			StartTime: timestamppb.New(*mq.StartTime),
