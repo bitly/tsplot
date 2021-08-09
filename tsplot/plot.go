@@ -2,8 +2,10 @@ package tsplot
 
 import (
 	"errors"
+
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
@@ -44,6 +46,9 @@ func (ts TimeSeries) Plot(opts ...PlotOption) (*plot.Plot, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// width of the line
+		line.Width = vg.Points(2)
 
 		// color the line
 		line.Color = lineColors[limit]
