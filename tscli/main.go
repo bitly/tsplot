@@ -114,18 +114,20 @@ func executeQuery(cmd *cobra.Command, args []string) error {
 	st := parseTime(startTime)
 	et := parseTime(endTime)
 
-	query := tsplot.MetricQuery{
-		Project:          project,
-		MetricDescriptor: fmt.Sprintf("custom.googleapis.com/opencensus/%s/%s/%s", app, service, metric),
-		StartTime:        &st,
-		EndTime:          &et,
-	}
+	query := tsplot.NewMetricQuery(
+		project,
+		fmt.Sprintf("custom.googleapis.com/opencensus/%s/%s/%s", app, service, metric),
+		&st,
+		&et,
+	)
 
 	if queryOverride != "" {
 		query.SetQueryFilter(queryOverride)
 	}
 
-	query.SetReduce(reduce)
+	if !reduce {
+		query.Set_REDUCE_NONE()
+	}
 
 	tsi, err := query.PerformWithClient(GoogleCloudMonitoringClient)
 	if err != nil {
