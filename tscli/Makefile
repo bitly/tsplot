@@ -1,8 +1,13 @@
 BINDIR ?= ../bin
+SHELL := /bin/bash
+GOBIN := $(shell which go 2> /dev/null)
+ifeq ($(GOBIN),)
+GOBIN := /usr/local/go/bin/go
+endif
 
 default: build
 
 .PHONY: build
 build:
 	@mkdir -p $(BINDIR)
-	GOOS=linux GOARCH=amd64 /usr/local/go/bin/go build -o $(BINDIR)/tscli
+	GOOS=linux GOARCH=amd64 $(GOBIN) build -o $(BINDIR)/tscli

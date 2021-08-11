@@ -1,9 +1,13 @@
 package tsplot
 
 import (
+	"image/color"
+	"time"
+
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
-	"image/color"
+	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // PlotOption defines the type used to configure the underlying *plot.Plot.
@@ -89,5 +93,30 @@ func ApplyDefaultHighContrast(p *plot.Plot) {
 	}
 	for _, opt := range opts {
 		opt(p)
+	}
+}
+
+// aggregationOption defines the type used to configure the underlying *monitoringpb.Aggregation.
+// A function that returns aggregationOption can be used to set options on the *monitoringpb.Aggregation.
+type aggregationOption func(agg *monitoringpb.Aggregation)
+
+// withAlignmentPeriod sets the duration of the aggregation's alignment period.
+func withAlignmentPeriod(d time.Duration) aggregationOption {
+	return func(agg *monitoringpb.Aggregation) {
+		agg.AlignmentPeriod = durationpb.New(d)
+	}
+}
+
+// withPerSeriesAligner sets the alignment method used for the time series.
+func withPerSeriesAligner(aligner monitoringpb.Aggregation_Aligner) aggregationOption {
+	return func(agg *monitoringpb.Aggregation) {
+		agg.PerSeriesAligner = aligner
+	}
+}
+
+// withCrossSeriesReducer sets the reduction method used for the time series.
+func withCrossSeriesReducer(reducer monitoringpb.Aggregation_Reducer) aggregationOption {
+	return func(agg *monitoringpb.Aggregation) {
+		agg.CrossSeriesReducer = reducer
 	}
 }

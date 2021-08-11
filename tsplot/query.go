@@ -29,7 +29,18 @@ type MetricQuery struct {
 	EndTime          *time.Time
 
 	queryFilter string
-	reduce      bool
+	aggregation *[]aggregationOption
+}
+
+// NewMetricQuery creates a new MetricQuery type with the aggregation opts initialized.
+func NewMetricQuery(project, metric string, startTime, endTime *time.Time) *MetricQuery {
+	return &MetricQuery{
+		Project: project,
+		MetricDescriptor: metric,
+		StartTime: startTime,
+		EndTime: endTime,
+		aggregation: &[]aggregationOption{},
+	}
 }
 
 // SetQueryFilter provides a hook to modify the metric query filter.
@@ -37,10 +48,9 @@ func (mq *MetricQuery) SetQueryFilter(queryFilter string) {
 	mq.queryFilter = queryFilter
 }
 
-// SetReduce sets the boolean reduce value on *MetricQuery structure. This controls whether or not cross series reduction is
-// performed on multiple time series.
-func (mq *MetricQuery) SetReduce(b bool) {
-	mq.reduce = b
+// SetAlignmentPeriod sets the alignment duration.
+func (mq *MetricQuery) SetAlignmentPeriod(d time.Duration) {
+	*mq.aggregation = append(*mq.aggregation, withAlignmentPeriod(d))
 }
 
 // request builds and returns a *monitoringpb.ListTimeSeriesRequest.
@@ -88,8 +98,8 @@ func (mq *MetricQuery) request() (*monitoringpb.ListTimeSeriesRequest, error) {
 		View: monitoringpb.ListTimeSeriesRequest_FULL,
 	}
 
-	if !mq.reduce {
-		tsreq.Aggregation.CrossSeriesReducer = 0
+	for _, opt := range *mq.aggregation {
+		opt(tsreq.Aggregation)
 	}
 
 	return &tsreq, nil
