@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/font"
 	"gonum.org/v1/plot/plotter"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -81,6 +82,16 @@ func WithXTimeTicks(format string) PlotOption {
 		p.X.Tick.Marker = plot.TimeTicks{
 			Format: format,
 		}
+	}
+}
+
+// WithFontSize configures the font sizes for the plot's Title, Axis', and Legend.
+func WithFontSize(size float64) PlotOption {
+	return func(p *plot.Plot) {
+		p.Title.TextStyle.Font.Size = font.Length(size)
+		p.X.Label.TextStyle.Font.Size = font.Length(size)
+		p.Y.Label.TextStyle.Font.Size = font.Length(size)
+		p.Legend.TextStyle.Font.Size = font.Length(size)
 	}
 }
 
