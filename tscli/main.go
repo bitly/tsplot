@@ -163,6 +163,7 @@ func executeQuery(cmd *cobra.Command, args []string) error {
 
 	p, err := ts.Plot([]tsplot.PlotOption{tsplot.WithXAxisName("UTC"),
 		tsplot.WithXTimeTicks(time.Kitchen),
+		tsplot.WithFontSize(float64(12)),
 		tsplot.WithGrid(colornames.Darkgrey),
 		tsplot.WithTitle(metric)}...)
 	if err != nil {
