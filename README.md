@@ -1,5 +1,6 @@
 # tsplot
 [![Go Report Card](https://goreportcard.com/badge/github.com/bitly/tsplot)](https://goreportcard.com/report/github.com/bitly/tsplot)
+[![Go Reference](https://pkg.go.dev/badge/github.com/bitly/tsplot.svg)](https://pkg.go.dev/github.com/bitly/tsplot)
 
 This package provides a method of querying for raw time series data from the GCM APIs and additionally plotting that data for use in other applications.
 
