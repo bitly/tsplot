@@ -23,22 +23,25 @@ func main() {
 
     ... snip ...
 
-    now := time.Now()
-    mq := &tsplot.MetricQuery{
-      Project: "bitly-gcp-prod"
-      MetricDescriptor: "custom.googleapis.com/opencensus/fishnet/queuereader_fishnet/messages_total"
-      StartTime: now.Add(-time.Hour * 2) // start two hours ago
-      EndTime: now
-    }
+    start := time.Now().Add(-1 * time.Hour)
+    end := time.Now()
+    mq := &tsplot.NewMetricQuery(
+      "bitly-gcp-prod", // GCP project
+      "custom.googleapis.com/opencensus/fishent/queuereader_fishnet/messages_total", // metric descriptor
+      &start, // start of time window
+      &end, // end of time window
+    )
 
+    // disable cross series reducer (MEAN reduction is default)
+    query.Set_REDUCE_NONE()
 
-    // enable cross series reducer
-    query.SetReduce(true)
+    // set different alignment window. (Default is 1 minute)
+    query.SetAlignmentPeriod(time.Minute * 2)
 
-    tsi, err := mq.PerformWithClient(client)
+    tsi, err := mq.PerformWithClient(client) // client is provided by user
     if err != nil {
         fmt.Printf("error performing query: %v\n", err)
-        os.Exit(1)
+    }
 }
 ```
 
@@ -53,6 +56,7 @@ func main() {
 
     ts := tsplot.TimeSeries{}
 
+    // optionally iterate over returned time series
     timeSeries, _ := tsi.Next()
     ts[metric] = ts.GetPoints()
 
