@@ -10,4 +10,4 @@ default: build
 .PHONY: build
 build:
 	@mkdir -p $(BINDIR)
-	GOOS=linux GOARCH=amd64 $(GOBIN) build -o $(BINDIR)/tscli
+	$(GOBIN) build -o $(BINDIR)/tscli

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -13,10 +14,11 @@ import (
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	"github.com/bitly/tsplot/tsplot"
 	"github.com/spf13/cobra"
-	"golang.org/x/image/colornames"
 	"gonum.org/v1/plot/vg"
-	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const GAP = "GOOGLE_APPLICATION_CREDENTIALS"
@@ -48,34 +50,28 @@ from Google Cloud Monitoring (formerly StackDriver).
 		RunE:    executeQuery,
 	}
 
-	project       string
-	app           string
-	service       string
-	metric        string
-	startTime     string
-	endTime       string
-	queryOverride string
-	outDir        string
-	reduce        bool
-	justPrint     bool
+	project   string
+	query     string
+	startTime string
+	endTime   string
+	outDir    string
+	title     string
+	groupBy   string
 )
 
 func init() {
 	rootCmd.Flags().StringVarP(&project, "project", "p", "", "GCP Project.")
-	rootCmd.Flags().StringVarP(&app, "app", "a", "", "The (Bitly) application. Usually top level directory")
-	rootCmd.Flags().StringVarP(&service, "service", "s", "", "The (Bitly) service. Service directory found under application directory.")
-	rootCmd.Flags().StringVarP(&metric, "metric", "m", "", "The metric.")
+	rootCmd.Flags().StringVarP(&query, "query", "m", "", "The query filter.")
 	rootCmd.Flags().StringVar(&startTime, "start", "", "Start time of window for which the query returns time series data for. Hours or minutes accepted, i.e: -5h or -5m.")
 	rootCmd.Flags().StringVar(&endTime, "end", "now", "End of the time window for which the query returns time series data for. Hours or minutes accepted, i.e: -5h or -5m or now.")
-	rootCmd.Flags().BoolVar(&justPrint, "print-raw", false, "Only print time series data and exit.")
-	rootCmd.Flags().BoolVar(&reduce, "reduce", false, "Use a time series reducer to return a single averaged result.")
-	rootCmd.Flags().StringVar(&queryOverride, "query-override", "", "Override the default query. Must be a full valid query. Metric flag is not used.")
 	rootCmd.Flags().StringVarP(&outDir, "output", "o", "", "Specify output directory for resulting plot. Defaults to current working directory.")
+	rootCmd.Flags().StringVarP(&title, "title", "t", "", "Specify title of graph.")
+	rootCmd.Flags().StringVar(&groupBy, "group-by", "", "Key to group metric by when dealing with multiple time series.")
 	rootCmd.MarkFlagRequired("project")
-	rootCmd.MarkFlagRequired("app")
-	rootCmd.MarkFlagRequired("service")
-	rootCmd.MarkFlagRequired("metric")
+	rootCmd.MarkFlagRequired("query")
 	rootCmd.MarkFlagRequired("start")
+	rootCmd.MarkFlagRequired("title")
+	rootCmd.MarkFlagRequired("output")
 }
 
 func auth(cmd *cobra.Command, args []string) error {
@@ -95,10 +91,6 @@ func auth(cmd *cobra.Command, args []string) error {
 
 func executeQuery(cmd *cobra.Command, args []string) error {
 
-	if metric != "" && queryOverride != "" {
-		fmt.Println("warn: both --metric and --query-override flag used. Favoring --query-override.")
-	}
-
 	if !timeFormatOK(startTime) {
 		return errors.New("err validating start time format")
 	}
@@ -114,69 +106,32 @@ func executeQuery(cmd *cobra.Command, args []string) error {
 	st := parseTime(startTime)
 	et := parseTime(endTime)
 
-	query := tsplot.NewMetricQuery(
-		project,
-		fmt.Sprintf("custom.googleapis.com/opencensus/%s/%s/%s", app, service, metric),
-		&st,
-		&et,
-	)
-
-	if queryOverride != "" {
-		query.SetQueryFilter(queryOverride)
+	request := &monitoringpb.ListTimeSeriesRequest{
+		Name: fmt.Sprintf("projects/%s", project),
+		//`resource.type = "global" AND metric.type = "custom.googleapis.com/opencensus/fishnet/queuereader_fishnet/messages_total"`
+		Filter: query,
+		Interval: &monitoringpb.TimeInterval{
+			EndTime:   timestamppb.New(et),
+			StartTime: timestamppb.New(st),
+		},
+		Aggregation: &monitoringpb.Aggregation{
+			AlignmentPeriod: durationpb.New(time.Minute * 1),
+			// todo: these need to be settable as they are not uniformly useful across all metric types.
+			PerSeriesAligner:   monitoringpb.Aggregation_ALIGN_RATE,
+			CrossSeriesReducer: monitoringpb.Aggregation_REDUCE_MEAN,
+			GroupByFields:      []string{fmt.Sprintf("metric.labels.%s", groupBy)},
+		},
+		View: monitoringpb.ListTimeSeriesRequest_FULL,
 	}
 
-	if !reduce {
-		query.Set_REDUCE_NONE()
-	}
-
-	tsi, err := query.PerformWithClient(GoogleCloudMonitoringClient)
+	tsi := GoogleCloudMonitoringClient.ListTimeSeries(context.Background(), request)
+	plot, err := tsplot.NewPlotFromTimeSeriesIterator(tsi, groupBy, tsplot.WithXTimeTicks(time.Kitchen), tsplot.WithTitle(title), tsplot.WithXAxisName("UTC"))
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
-	ts := tsplot.TimeSeries{}
-	for {
-		timeSeries, err := tsi.Next()
-		if err != nil {
-			if err == iterator.Done {
-				break
-			}
-			return err
-		}
-
-		// todo: implement "just-print" mode for multiple time series
-		//if justPrint {
-		//	fmt.Printf("%v", timeSeries)
-		//	return nil
-		//}
-
-		// key helps to fill out legend.
-		// Here we are grabbing the pod name.
-		key := timeSeries.GetMetric().GetLabels()["opencensus_task"]
-		if key == "" {
-			// Labels we want to use don't necessarily exist when a cross series reducer has been used.
-			// So we can just use "mean" in the legend.
-			key = "mean"
-		}
-		ts[key] = timeSeries.GetPoints()
-	}
-
-	p, err := ts.Plot([]tsplot.PlotOption{tsplot.WithXAxisName("UTC"),
-		tsplot.WithXTimeTicks(time.Kitchen),
-		tsplot.WithFontSize(float64(12)),
-		tsplot.WithGrid(colornames.Darkgrey),
-		tsplot.WithTitle(metric)}...)
-	if err != nil {
-		return err
-	}
-
-	if outDir == "" {
-		outDir, _ = os.Getwd()
-	}
-	saveFile := fmt.Sprintf("%s/%s-%s.png", outDir, service, metric)
-	p.Save(8*vg.Inch, 4*vg.Inch, saveFile)
-
-	return nil
+	saveFile := fmt.Sprintf("%s/%s.png", outDir, title)
+	return plot.Save(8*vg.Inch, 4*vg.Inch, saveFile)
 }
 
 func timeFormatOK(s string) bool {
