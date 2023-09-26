@@ -30,7 +30,8 @@ CODEGENFILE="set_aggregation_opts.go"
 .PHONY: codegen
 codegen:
 	$(BINDIR)/codegen -output ./tsplot/$(CODEGENFILE)
+	go fmt ./tsplot/$(CODEGENFILE)
 
 .PHONY: codegendiff
 codegendiff:
-	diff ./tsplot/$(CODEGENFILE) <($(BINDIR)/codegen -stdout)
+	diff ./tsplot/$(CODEGENFILE) <($(BINDIR)/codegen -stdout | gofmt)
