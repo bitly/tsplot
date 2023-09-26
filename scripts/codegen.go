@@ -1,4 +1,5 @@
 package main
+
 /*
 codegen.go creates Set_* API methods for Google Cloud Monitoring aggregation alignment and reduction options.
 Leverages the exported variables in the Google monitoring/v3 package (common.pb.go) to ensure that all

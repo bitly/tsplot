@@ -35,11 +35,11 @@ type MetricQuery struct {
 // NewMetricQuery creates a new MetricQuery type with the aggregation opts initialized.
 func NewMetricQuery(project, metric string, startTime, endTime *time.Time) *MetricQuery {
 	return &MetricQuery{
-		Project: project,
+		Project:          project,
 		MetricDescriptor: metric,
-		StartTime: startTime,
-		EndTime: endTime,
-		aggregation: &[]aggregationOption{},
+		StartTime:        startTime,
+		EndTime:          endTime,
+		aggregation:      &[]aggregationOption{},
 	}
 }
 
