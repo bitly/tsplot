@@ -11,12 +11,8 @@ test:
 	$(GOBIN) test -v ./...
 
 .PHONY: build
-build: $(BINDIR)/codegen
+build:
 	make -C tscli
-
-$(BINDIR)/codegen: $(SCRIPTDIR)/codegen.go
-	@mkdir -p $(BINDIR)
-	GOOS=linux GOARCH=amd64 $(GOBIN) build -o $(BINDIR)/codegen $<
 
 .PHONY: install
 install: build
@@ -26,11 +22,3 @@ install: build
 clean:
 	rm -rf $(BINDIR)
 
-CODEGENFILE="set_aggregation_opts.go"
-.PHONY: codegen
-codegen:
-	$(BINDIR)/codegen -output ./tsplot/$(CODEGENFILE)
-
-.PHONY: codegendiff
-codegendiff:
-	diff ./tsplot/$(CODEGENFILE) <($(BINDIR)/codegen -stdout)

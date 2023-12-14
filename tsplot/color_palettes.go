@@ -6,6 +6,31 @@ import (
 	"golang.org/x/image/colornames"
 )
 
+var usedColors = make(map[string]color.RGBA)
+
+// simple colors (subset of golang.org/x/image/colornames)
+var availableColors = map[string]color.RGBA{
+	"blue":    color.RGBA{0x00, 0x00, 0xff, 0xff}, // rgb(0, 0, 255)
+	"brown":   color.RGBA{0xa5, 0x2a, 0x2a, 0xff}, // rgb(165, 42, 42)
+	"orange":  color.RGBA{0xff, 0xa5, 0x00, 0xff}, // rgb(255, 165, 0)
+	"hotpink": color.RGBA{0xff, 0x69, 0xb4, 0xff}, // rgb(255, 105, 180)
+	"red":     color.RGBA{0xff, 0x00, 0x00, 0xff}, // rgb(255, 0, 0)
+	"purple":  color.RGBA{0x80, 0x00, 0x80, 0xff}, // rgb(128, 0, 128)
+	"yellow":  color.RGBA{0xff, 0xff, 0x00, 0xff}, // rgb(255, 255, 0)
+	"green":   color.RGBA{0x00, 0x80, 0x00, 0xff}, // rgb(0, 128, 0)
+
+}
+
+func getUnusedColor() color.RGBA {
+	for k, v := range availableColors {
+		if _, ok := usedColors[k]; !ok {
+			usedColors[k] = v
+			return v
+		}
+	}
+	return colornames.Black
+}
+
 type ColorPalette struct {
 	Foreground color.Color
 	Background color.Color
