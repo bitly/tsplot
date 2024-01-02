@@ -70,7 +70,7 @@ func NewPlotFromTimeSeries(ts *monitoringpb.TimeSeries, opts ...PlotOption) (*pl
 		opt(p)
 	}
 
-	p.Y.Max = YMax + 200
+	p.Y.Max = YMax + (.1 * YMax)
 	return p, nil
 }
 
@@ -107,16 +107,19 @@ func NewPlotFromTimeSeriesIterator(tsi *monitoring.TimeSeriesIterator, legendKey
 			legendEntry, _ := plotter.NewPolygon()
 			legendEntry.Color = lineColor
 			p.Legend.Left = true
+			p.Legend.Top = true
 			p.Legend.Add(timeSeries.GetMetric().GetLabels()[legendKey], legendEntry)
 		}
 	}
 
 	// set Y Axis scale
-	p.Y.Max = yMax + 200
+	p.Y.Max = yMax + (.1 * yMax)
 
 	for _, opt := range opts {
 		opt(p)
 	}
+
+	resetUsedColors()
 
 	return p, nil
 }
