@@ -94,6 +94,16 @@ func WithFontSize(size float64) PlotOption {
 	}
 }
 
+// WithFontSize configures the font variant as Sans-Serif
+func WithSansFont() PlotOption {
+	return func(p *plot.Plot) {
+		p.Title.TextStyle.Font.Variant = "Sans"
+		p.X.Label.TextStyle.Font.Variant = "Sans"
+		p.Y.Label.TextStyle.Font.Variant = "Sans"
+		p.Legend.TextStyle.Font.Variant = "Sans"
+	}
+}
+
 // ApplyDefaultHighContrast applies the default high contrast color scheme to the *plot.Plot.
 func ApplyDefaultHighContrast(p *plot.Plot) {
 	opts := []PlotOption{
