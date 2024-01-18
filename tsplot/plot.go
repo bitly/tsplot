@@ -6,6 +6,7 @@ import (
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 	"google.golang.org/api/iterator"
 	"google.golang.org/genproto/googleapis/api/metric"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
@@ -108,6 +109,7 @@ func NewPlotFromTimeSeriesIterator(tsi *monitoring.TimeSeriesIterator, legendKey
 			legendEntry.Color = lineColor
 			p.Legend.Left = true
 			p.Legend.Top = true
+			p.Legend.Padding = vg.Points(2)
 			p.Legend.Add(timeSeries.GetMetric().GetLabels()[legendKey], legendEntry)
 		}
 	}
