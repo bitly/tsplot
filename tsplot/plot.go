@@ -105,14 +105,19 @@ func NewPlotFromTimeSeriesIterator(tsi *monitoring.TimeSeriesIterator, legendKey
 
 		// add to legend
 		if legendKey != "" {
-			legendEntry, _ := plotter.NewPolygon()
-			legendEntry.Color = lineColor
-			p.Legend.Left = true
-			p.Legend.Top = true
-			p.Legend.Padding = vg.Points(2)
-			p.Legend.Add(timeSeries.GetMetric().GetLabels()[legendKey], legendEntry)
+			legendThumbnail, _ := plotter.NewPolygon()
+			legendThumbnail.Color = lineColor
+			legendEntry := timeSeries.GetMetric().GetLabels()[legendKey]
+			if legendEntry == "" {
+				legendEntry = timeSeries.GetResource().GetLabels()[legendKey]
+			}
+			p.Legend.Add(legendEntry, legendThumbnail)
 		}
 	}
+
+	p.Legend.Left = true
+	p.Legend.Top = true
+	p.Legend.Padding = vg.Points(2)
 
 	// set Y Axis scale
 	p.Y.Max = yMax + (.1 * yMax)
