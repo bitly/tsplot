@@ -1,8 +1,9 @@
 package tsplot
 
 import (
-	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 	"testing"
+
+	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 )
 
 func Test_findMaxFromFloat64Data(t *testing.T) {
