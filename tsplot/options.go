@@ -3,11 +3,11 @@ package tsplot
 import (
 	"image/color"
 
+	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/font"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
-	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
 // PlotOption defines the type used to configure the underlying *plot.Plot.
